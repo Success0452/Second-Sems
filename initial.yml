@@ -1,0 +1,85 @@
+---
+- hosts: all
+  become: true
+  vars:
+    setup_user: newer
+    sys_packages: [ "vim", "git", "unzip", "php-cli", "ufw" ]
+    lemp_packages: ["wget", "apache2", "php-mysql", "php", "composer", "curl", "python2", "pip"]
+  tasks:
+    - name: Make sure we have a  'wheel' group
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have a passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%wheel'
+        line: '&wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Add sudoers to wheel group
+      user: name="{{ setup_user }}"
+        groups=wheel
+        append=yes
+        state=present
+        createhome=yes
+
+    - name: Set timezone to Africa/Lagos
+      community.general.timezone:
+        name: Africa/Lagos
+
+    - name: create a new user and add it to the sudo group
+      user:
+       name: "{{ setup_user }}"
+       group: wheel
+       shell: /bin/bash
+
+    - name: Configure sudoers access
+      community.general.sudoers:
+        name: allow-all-sudo
+        state: present
+        user: "{{ setup_user }}"
+        commands: ALL
+        nopassword: true
+
+    - name: Set authorized key for user {{ setup_user }} copying it from current user
+      ansible.posix.authorized_key:
+        user: "{{ setup_user }}"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+    - name: Update repositories cache and install system packages
+      apt:
+        name: "{{ sys_packages }}"
+        update_cache: yes
+      tags: apt
+
+    - name: Update repositories cache and install lemp packages
+      apt:
+        name: "{{ lemp_packages }}"
+        update_cache: yes
+      tags: apt
+
+    - name: Make sure SSH is allowed within UFW
+      ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: Deny other incoming traffic by default
+      ufw:
+        state: enabled
+        direction: incoming
+        policy: deny
+
+    - name: create a bash directory
+      ansible.builtin.file:
+        path: /home/{{ setup_user }}/bash
+        state: directory
+
+    - name: Make bash script available in the remote repo
+      copy:
+        src: psql.sh
+        dest: /home/psql.sh
+        mode: a+x

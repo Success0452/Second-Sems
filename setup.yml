@@ -1,0 +1,75 @@
+---
+- hosts: all
+  become: true
+  vars:
+    folder_name: successolatunde.me
+    repo_url: https://github.com/f1amy/laravel-realworld-example-app
+    ap_http_conf_file: successolatunde.conf
+    user: newer
+    http_port: 80
+    http_host: "successolatunde.me"
+  tasks:
+
+    - name: Set a hostname
+      ansible.builtin.hostname:
+        name: "{{ user }}"
+
+    - name: create folder in ansible var
+      file:
+        path: /var/www/html/{{ folder_name }}
+        state: directory
+
+    - name: apache installed
+      ansible.builtin.apt:
+        name: apache2
+        update_cache: true
+        state: latest
+
+    - name: Clone a github repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: /var/www/html/{{ folder_name }}
+        clone: yes
+        update: yes
+
+    - name: create a new conf file in sites-available
+      ansible.builtin.file:
+        path: /etc/apache2/sites-available/{{ ap_http_conf_file }}
+        owner: "www-data"
+        state: touch
+        mode: '0755'
+
+    - name: Setup Up Apache VirtualHost
+      ansible.builtin.template:
+        src: "templates/apache.conf.j2"
+        dest: "/etc/apache2/sites-available/successolatunde.conf"
+
+    - name: Enable new site
+      shell: /usr/sbin/a2ensite {{ ap_http_conf_file }}
+      notify: Reload Apache
+
+    - name: Disable default apache site
+      shell: /usr/sbin/a2dissite 000-default.conf
+      notify: Reload Apache
+
+    - name: UFW - Allow HTTP on port
+      ufw:
+        rule: allow
+        port: 80
+        proto: tcp
+
+    - name: Enable Apache
+      service:
+        name: apache2
+        enabled: yes
+
+  handlers:
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted

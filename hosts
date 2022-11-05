@@ -1,0 +1,9 @@
+[node1]
+178.62.205.98
+
+[node2]
+178.62.202.200
+
+[all:vars]
+ansible-python_interpreter=/usr/bin/python3
+

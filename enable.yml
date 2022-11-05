@@ -1,0 +1,52 @@
+---
+- hosts: all
+  become: true
+  vars:
+
+  tasks:
+
+    - name: create .env file
+      ansible.builtin.file:
+        path: "/var/www/html/successolatunde.me/.env"
+        state: touch
+
+    - name: copy .env file
+      copy:
+        src: "/var/www/html/successolatunde.me/.env"
+        dest: "/var/www/html/successolatunde.me/.env.example"
+        remote_src: true
+
+    - name: Enable rewrite module
+      apache2_module:
+        name: rewrite
+        state: present
+        ignore_configcheck: True
+      notify: Restart Apache
+
+    - name: Update Permissions
+      ansible.builtin.file:
+        path: /var/www/html/successolatunde.me
+        state: directory
+        recurse: yes
+
+    - name: create .htaccess file
+      ansible.builtin.file:
+        path: "/var/www/html/successolatunde.me/.htaccess"
+        state: touch
+
+    - name: enable .htaccess file
+      copy:
+        src: "/home/famous/templates/htaccess"
+        dest: "/var/www/html/successolatunde.me/.htaccess"
+
+  handlers:
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
