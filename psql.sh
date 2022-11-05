@@ -1,17 +1,4 @@
-#!/bin/bash -ex
-
-# This script is for use with the DevOps Challenge of installing PostgreSQL 9.6 on to a provisioned AWS EC2 instance running Ubuntu.
-
-# This script will perform the following steps:
-# 1. Set variables such as $packages, $rfolder, $dfolder, $gitloc, $sysuser, $logfile, and $helloscript
-# 2. Install packages based off of $packages.
-# 3. Create directory: /postgres and other required.
-# 4. Create system user 'postgres'.
-# 5. Pull PostgreSQL from Git depot and confirm it is correct: git clone git://git.postgresql.org/git/postgresql.git.
-# 6. Install PostgreSQL. ensuring the data files are stored in $dataFolder.
-# 7. Start the PostgreSQL service using the pg_ctl command.
-# 8. Run create_hello.sql script.
-# 9. Run '/postgres/bin/psql -c 'select * from hello;' -U user hello_postgres;' against newly created DB and test for succesful response.
+#!/bin/bash
 
 # Section 1 - Variable Creation
 
